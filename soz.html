@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>AVSV Note</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap-theme.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.11/angular.min.js"></script>
+    <script src="//code.jquery.com/jquery-1.11.2.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
+    <style>
+        .container-fluid {
+            margin-top: 20px;
+        }
+        .row div {
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body ng-app="survey">
+<nav class="navbar navbar-default navbar-static-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav">
+                <li><a href="index.html">Arbeitsverhalten</a></li>
+                <li class="active"><a href="soz.html">Sozialverhalten</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+    <div class="container-fluid" ng-controller="SurveyController">
+        <div class="row" ng-repeat="category in questions" ng-controller="CategoryController">
+            <div class="col-sm-offset-2 col-sm-10 col-xs-12">
+                <strong>{{category.category}}</strong>
+            </div>
+            <div class="row" ng-repeat="question in category.questions">
+                <div class="col-sm-offset-2 col-sm-4 col-xs-12">
+                    {{question}}
+                </div>
+                <div class="col-sm-4 col-xs-12">
+                    <div class="col-xs-2" ng-repeat="mark in marks">
+                        <label>
+                            <input type="radio" name="mark_{{$parent.$parent.$index}}_{{$parent.$index}}" ng-click="setMark($parent.$index, $parent.$parent.$index, mark)">
+                            {{mark}}
+                        </label>
+                    </div>
+                </div>
+                <div class="col-sm-offset-0 col-sm-2 col-xs-offset-5 col-xs-2">
+                    <span class="label label-success" ng-show="getStatus($index)">ok</span>
+                </div>
+            </div>
+            <div class="col-sm-offset-10 col-sm-2 col-xs-12">
+                Durchschnitt: {{category.mark}}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-offset-10 col-sm-2 col-xs-12">
+                <strong>Gesamtnote: {{overallMean}}</strong>
+            </div>
+        </div>
+    </div>
+    <script>
+        var survey = angular.module('survey', []);
+        survey.controller('SurveyController', ['$scope', function ($scope) {
+            $scope.marks = [1, 2, 3, 4, 5, 6];
+            $scope.overallMean = 0;
+            $scope.questions = [
+                {
+                    category: 'Kooperation und Teamfähigkeit',
+                    mark: 0,
+                    questions: [
+                        'Hält sich an Gesprächsregeln',
+                        'Bringt eigene Leistungen aktiv ein',
+                        'Kann mit unterschiedlichen SuS arbeiten',
+                        'Kann gemeinsam mit anderen ein Vorhaben planen und den Plan durchführen',
+                        'Stimmt eigene Interessen mit Gruppeninteresse ab',
+                        'Kann Kritik annehmen und umsetzen',
+                        'Verantwortungsbereitschaft in Gruppenphasen'
+                    ]
+                },
+                {
+                    category: 'Konfliktfähigkeit und Toleranz',
+                    mark: 0,
+                    questions: [
+                        'Vermeidet Streit und Auseinandersetzungen',
+                        'Kann Streit gewaltfrei schlichten',
+                        'Vermeidet Schimpfwörter',
+                        'Kann sich bei Fehlverhalten entschuldigen und sich mit anderen einigen',
+                        'Toleriert die Meinung, das Verhalten und das Aussehen anderer'
+                    ]
+                },
+                {
+                    category: 'Verantwortungsbereitschaft',
+                    mark: 0,
+                    questions: [
+                        'Zeigt Verantwortung für eigenes Handeln',
+                        'Engagiert sich außerunterrichtlich für die Schule',
+                        'Setzt sich für die Interessen der anderen ein',
+                        'Vermittelt in Konfliktsituationen',
+                        'Übernimmt Aufgaben und Verantwortung für Gemeinschaft'
+                    ]
+                }
+            ];
+
+            $scope.adaptOverallMean = function() {
+                var length = 0;
+                var avg = 0;
+
+                for(var i = 0; i<$scope.questions.length;i++){
+                    avg += parseFloat($scope.questions[i].mark);
+                    if($scope.questions[i].mark > 0) {
+                        length++;
+                    }
+                }
+
+                $scope.overallMean = (avg/length).toFixed(2);
+            };
+        }]);
+        survey.controller('CategoryController', ['$scope', function ($scope) {
+            $scope.selectedMarks = {};
+
+            $scope.setMark = function (idx, category, mark) {
+                $scope.selectedMarks[idx] = $scope.selectedMarks[idx] || {};
+                $scope.selectedMarks[idx].mark = mark;
+
+                var avgMark = 0;
+                var length = 0;
+                angular.forEach($scope.selectedMarks, function (val) {
+                    avgMark += val.mark;
+                    length++;
+                });
+                $scope.questions[category].mark = (avgMark/length).toFixed(2);
+                $scope.adaptOverallMean();
+            };
+
+            $scope.getStatus = function(idx) {
+                if(typeof $scope.selectedMarks[idx] === 'undefined') {
+                    return false;
+                }
+                if($scope.selectedMarks[idx].mark === 'undefined') {
+                    return false;
+                }
+                return true;
+            };
+        }]);
+    </script>
+</body>
+</html>
